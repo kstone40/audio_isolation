@@ -16,3 +16,6 @@ Torchaudio I/O operations are dependent on [ffmpeg](https://ffmpeg.org/about.htm
 
 #### Conda Environment
 Next, install the conda environment.  Conda is recommended over virtualenv since there are packages on the conda-forge repository missing from PyPI.  Open the Anaconda Prompt and run `conda env create -n <ENVNAME> --file environment.yml` replacing ENVNAME with a name of your choice.  I am using python 3.10.10 if you run into any issues.  I believe I read somewhere in the Torchaudio documentation that 3.11 is not compatible yet.  Verify the install was correct by running `jupyter lab` and running all cells in demo.ipynb.  One song from musdb18 is provided in data/demo directory.
+
+Update:
+Well, the wav files in the demo are too big to upload.  If you downloaded the HQ musdb18 dataset then copy over the folder A Classic Education - NightOwl to data/demo prior to running the notebook.
