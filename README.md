@@ -19,3 +19,10 @@ Next, install the conda environment.  Conda is recommended over virtualenv since
 
 Update:
 Well, the wav files in the demo are too big to upload.  If you downloaded the HQ musdb18 dataset then copy over the folder A Classic Education - NightOwl to data/demo prior to running the notebook.
+
+## Installation on Mac
+With conda installed, open a terminal and run the command:
+```
+conda env create --file environment-mac.yml
+```
+Activate the conda environment. You can now test your environment using demo.ipynb. **Note:** You will need to download the HQ musdb18 dataset and place a sample in the data folder to run the notebook. See the data folder's README.
