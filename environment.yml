@@ -241,4 +241,3 @@ dependencies:
   - pip:
       - torchaudio==2.0.0
       - torchvision==0.15.0
-prefix: C:\Users\ja238f\Anaconda3\envs\at
