@@ -1,7 +1,7 @@
+import nussl
 from nussl.ml.networks.modules import AmplitudeToDB, BatchNorm, RecurrentStack, Embedding
 from torch import nn
 import torch
-import nussl
 
 class MaskInference(nn.Module):
     def __init__(self, num_features, num_audio_channels, hidden_size,
@@ -35,12 +35,11 @@ class MaskInference(nn.Module):
         }
         return output
     
-    
+    # Added function
     @classmethod
     def build(cls, num_features, num_audio_channels, hidden_size, 
-                num_layers, bidirectional, dropout, num_sources, 
-                activation='sigmoid'):
-        
+            num_layers, bidirectional, dropout, num_sources, 
+            activation='sigmoid'):
         # Step 1. Register our model with nussl
         nussl.ml.register_module(cls)
         
@@ -74,7 +73,7 @@ class MaskInference(nn.Module):
         # This will be important later when we actually deploy our model.
         for key in ['mask', 'estimates']:
             modules[key] = {'class': 'Alias'}
-            connections.append([key, f'model:{key}'])
+            connections.append([key, [f'model:{key}']])
         
         # Step 2d. There are two outputs from our SeparationModel: estimates and mask.
         # Then put it all together.
