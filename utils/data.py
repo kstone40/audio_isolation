@@ -15,6 +15,8 @@ import logging
 import os
 from . import argbind
 from . import utils
+from torchaudio.datasets import MUSDB_HQ
+import torchaudio
 
 MAX_SOURCE_TIME = 10000
 LABELS = ['bass', 'drums', 'other', 'vocals']
@@ -189,6 +191,58 @@ def prepare_musdb(
                 src_path.mkdir(exist_ok=True)
                 src_path = str(src_path / song_name) + '.wav'
                 val.write_audio_to_file(src_path)
+                
+@argbind.bind_to_parser()
+def prepare_musdbhq(
+    folder : str = 'data/musdb18hq/', 
+    musdb_root : str = None, 
+):
+    """Prepares MUSDB data which is organized as .mp4 
+    STEM format to a directory structure that can be
+    used by Scaper.
+
+    Parameters
+    ----------
+    folder : str
+        Target foreground folder for re-organized stems.
+    musdb_root : str, optional
+        Path to root of musdb dataset, by default None
+    """
+    download = False
+    if musdb_root is None: download = True
+
+    for split in ['train', 'validation', 'test']:
+        if split in ['train', 'validation']:
+            subsets = 'train'
+            target_folder = split
+        else:
+            subsets = 'test'
+            split = None
+            target_folder = 'test'
+    
+        # musdb = nussl.datasets.MUSDB18(
+        #     folder=musdb_root, download=download,
+        #     split=split, subsets=subsets)
+        musdb = MUSDB_HQ(root=musdb_root, 
+                        download=download,
+                        subset=subsets, 
+                        split=split)
+
+        _folder = Path(folder).expanduser() / target_folder
+        _folder.mkdir(parents=True, exist_ok=True)
+
+        logging.info(f"Saving data to {_folder}")
+
+        for item in tqdm.tqdm(musdb):
+            song_name = item[-1]
+            for i, source in enumerate(musdb.sources):
+                src_path = _folder / source
+                src_path.mkdir(exist_ok=True)
+                src_path = str(src_path / song_name) + '.wav'
+                wave = item[0][i, :, :]
+                #wave = wave.cpu().detach().numpy()
+                #wave.write_audio_to_file(src_path)
+                torchaudio.save(src_path, wave, item[1])
 
 @argbind.bind_to_parser()
 def profile(
