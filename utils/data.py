@@ -196,6 +196,7 @@ def prepare_musdb(
 def prepare_musdbhq(
     folder : str = 'data/musdb18hq/', 
     musdb_root : str = None, 
+    download=False
 ):
     """Prepares MUSDB data which is organized as .mp4 
     STEM format to a directory structure that can be
@@ -208,8 +209,6 @@ def prepare_musdbhq(
     musdb_root : str, optional
         Path to root of musdb dataset, by default None
     """
-    download = False
-    if musdb_root is None: download = True
 
     for split in ['train', 'validation', 'test']:
         if split in ['train', 'validation']:
