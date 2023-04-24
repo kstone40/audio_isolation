@@ -23,5 +23,6 @@ model_params:
 optimizer_params:
   lr: 0.001
 train_params:
-  epoch_length: 100
-  max_epochs: 10
+  epoch_length: 10
+  max_epochs: 1
+save_name: 'test_stft_mask'

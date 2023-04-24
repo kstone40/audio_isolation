@@ -67,7 +67,7 @@ optimizer = torch.optim.Adam(model.parameters(), **configs['optimizer_params'])
 trainer, validator = nussl.ml.train.create_train_and_validation_engines(train_step, val_step, device=device)
 
 # Save model outputs
-checkpoint_folder = Path('models').absolute()
+checkpoint_folder = Path('models/'+configs['save_name']).absolute()
 
 # Adding handlers from nussl that print out details about model training
 # run the validation step, and save the models.
