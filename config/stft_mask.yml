@@ -7,7 +7,7 @@ valid_folder: 'data/musdb18hq/validation'
 test_folder: 'data/musdb18hq/test'
 train_generator_params:
   num_mixtures: 1000000
-  coherent_prob: 0.7
+  coherent_prob: 1.0
 valid_generator_params:
   num_mixtures: 10
   coherent_prob: 1.0
@@ -23,6 +23,6 @@ model_params:
 optimizer_params:
   lr: 0.001
 train_params:
-  epoch_length: 10
-  max_epochs: 1
+  epoch_length: 25
+  max_epochs: 25
 save_name: 'test_stft_mask'

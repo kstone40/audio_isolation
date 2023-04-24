@@ -60,7 +60,7 @@ def val_step(engine, batch):
     return loss_vals
 
 #Set up the model and optimizer
-model = MaskInference.build(stft_params.window_length//2+1, **configs['model_params'])
+model = MaskInference.build(stft_params.window_length//2+1, **configs['model_params']).to(device)
 optimizer = torch.optim.Adam(model.parameters(), **configs['optimizer_params'])
 
 # Create nussl ML engine
@@ -73,5 +73,6 @@ checkpoint_folder = Path('models/'+configs['save_name']).absolute()
 # run the validation step, and save the models.
 nussl.ml.train.add_stdout_handler(trainer, validator)
 nussl.ml.train.add_validate_and_checkpoint(checkpoint_folder, model, optimizer, train_data, trainer, val_dataloader, validator)
+nussl.ml.train.add_progress_bar_handler(trainer, validator)
 
 trainer.run(train_dataloader, **configs['train_params'])
