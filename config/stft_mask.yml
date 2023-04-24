@@ -17,12 +17,12 @@ model_params:
   hidden_size: 64
   num_layers: 1
   bidirectional: True
-  dropout: 0.1
+  dropout: 0
   num_sources: 1
   activation: 'sigmoid'
 optimizer_params:
-  lr: 0.001
+  lr: 0.01
 train_params:
   epoch_length: 25
   max_epochs: 25
-save_name: 'test_stft_mask'
+save_name: 'stft_mask_try_overfit'
