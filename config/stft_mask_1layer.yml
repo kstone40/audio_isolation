@@ -25,4 +25,4 @@ optimizer_params:
 train_params:
   epoch_length: 25
   max_epochs: 25
-save_name: 'ST_mask_5layer'
+save_name: 'ST_mask_1layer'

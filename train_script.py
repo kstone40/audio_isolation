@@ -1,5 +1,10 @@
-import nussl
+# import os
+# print(os.environ['CONDA_DEFAULT_ENV'])
+# import sys
+# print(sys.version)
+
 import torch
+import nussl
 from nussl.datasets import transforms as nussl_tfm
 from models.MaskInference import MaskInference
 from utils import utils, data
@@ -9,7 +14,7 @@ import yaml, argparse
 #Set up configuration from optional command line --config argument, else default
 global args
 parser = argparse.ArgumentParser(description='DL Source Separation')
-parser.add_argument('--config', default='config/stft_mask.yml')
+parser.add_argument('--config', default='config/test_auto.yml')
 args = parser.parse_args()
 
 #Load yaml configs into configs dictionary
@@ -80,7 +85,12 @@ nussl.ml.train.add_stdout_handler(trainer, validator)
 nussl.ml.train.add_validate_and_checkpoint(checkpoint_folder, model, optimizer, train_data, trainer, val_dataloader, validator)
 nussl.ml.train.add_progress_bar_handler(trainer, validator)
 
-trainer.run(train_dataloader, **configs['train_params'])
+import os
+path = 'models/'+configs['save_name']
+if not os.path.exists(path):
+    os.makedirs(path)
 
 with open('models/'+configs['save_name']+'/configs.yml', 'w') as file:
     yaml.dump(configs, file)
+
+trainer.run(train_dataloader, **configs['train_params'])
