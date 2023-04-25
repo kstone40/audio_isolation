@@ -21,7 +21,7 @@ model_params:
   num_sources: 1
   activation: 'sigmoid'
 optimizer_params:
-  lr: 0.01
+  lr: 0.001
 train_params:
   epoch_length: 5
   max_epochs: 1

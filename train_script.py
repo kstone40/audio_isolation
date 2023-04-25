@@ -20,6 +20,8 @@ with open(args.config,'r') as f:
 utils.logger()
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+
+###########CHANGES##############
 stft_params = nussl.STFTParams(**configs['stft_params'])
 
 tfm = nussl_tfm.Compose([
@@ -28,13 +30,16 @@ tfm = nussl_tfm.Compose([
     nussl_tfm.IndexSources('source_magnitudes', 1),
     nussl_tfm.ToSeparationModel(),
 ])
+################################
 
+################ Also not pass stft_params here
 train_data = data.on_the_fly(stft_params, transform=tfm, fg_path=configs['test_folder'], **configs['train_generator_params'])
 train_dataloader = torch.utils.data.DataLoader(train_data, num_workers=1, batch_size=configs['batch_size'])
 
 val_data = data.on_the_fly(stft_params, transform=tfm, fg_path=configs['valid_folder'], **configs['valid_generator_params'])
 val_dataloader = torch.utils.data.DataLoader(val_data, num_workers=1, batch_size=configs['batch_size'])
 
+#Waveform models will use MSE Loss
 loss_fn = nussl.ml.train.loss.L1Loss()
 
 def train_step(engine, batch):
@@ -76,3 +81,6 @@ nussl.ml.train.add_validate_and_checkpoint(checkpoint_folder, model, optimizer, 
 nussl.ml.train.add_progress_bar_handler(trainer, validator)
 
 trainer.run(train_dataloader, **configs['train_params'])
+
+with open('models/'+configs['save_name']+'/configs.yml', 'w') as file:
+    yaml.dump(configs, file)

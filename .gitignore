@@ -3,6 +3,7 @@ data/MUSDB18HQ
 data
 
 .nfs*
+*.bash
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
