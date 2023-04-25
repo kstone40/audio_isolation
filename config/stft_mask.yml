@@ -1,0 +1,28 @@
+stft_params: 
+  window_length: 512
+  hop_length: 128
+  window_type: sqrt_hann
+train_folder: 'data/musdb18hq/train'
+valid_folder: 'data/musdb18hq/validation'
+test_folder: 'data/musdb18hq/test'
+train_generator_params:
+  num_mixtures: 1000000
+  coherent_prob: 1.0
+valid_generator_params:
+  num_mixtures: 10
+  coherent_prob: 1.0
+batch_size: 10
+model_params:
+  num_audio_channels: 1
+  hidden_size: 64
+  num_layers: 1
+  bidirectional: True
+  dropout: 0
+  num_sources: 1
+  activation: 'sigmoid'
+optimizer_params:
+  lr: 0.01
+train_params:
+  epoch_length: 25
+  max_epochs: 25
+save_name: 'stft_mask_try_overfit'
