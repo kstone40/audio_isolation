@@ -5,8 +5,7 @@ data
 #Added by Kevin
 .nfs*
 *.bash
-*optimizer.pth
-best.model.pth
+*.pth
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
