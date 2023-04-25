@@ -7,6 +7,7 @@ import torch
 import nussl
 from nussl.datasets import transforms as nussl_tfm
 from models.MaskInference import MaskInference
+from models.UNet import UNetSpect
 from utils import utils, data
 from pathlib import Path
 import yaml, argparse
@@ -25,25 +26,27 @@ with open(args.config,'r') as f:
 utils.logger()
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+model_type = configs['model_type']
 
-###########CHANGES##############
+
 stft_params = nussl.STFTParams(**configs['stft_params'])
 
+#############CHANGE FOR WAVEFORM##################
 tfm = nussl_tfm.Compose([
     nussl_tfm.SumSources([['bass', 'drums', 'other']]),
     nussl_tfm.MagnitudeSpectrumApproximation(),
     nussl_tfm.IndexSources('source_magnitudes', 1),
     nussl_tfm.ToSeparationModel(),
 ])
-################################
 
-################ Also not pass stft_params here
+#############CHANGE FOR WAVEFORM##################
 train_data = data.on_the_fly(stft_params, transform=tfm, fg_path=configs['test_folder'], **configs['train_generator_params'])
 train_dataloader = torch.utils.data.DataLoader(train_data, num_workers=1, batch_size=configs['batch_size'])
 
 val_data = data.on_the_fly(stft_params, transform=tfm, fg_path=configs['valid_folder'], **configs['valid_generator_params'])
 val_dataloader = torch.utils.data.DataLoader(val_data, num_workers=1, batch_size=configs['batch_size'])
 
+#############CHANGE FOR WAVEFORM##################
 #Waveform models will use MSE Loss
 loss_fn = nussl.ml.train.loss.L1Loss()
 
@@ -70,7 +73,11 @@ def val_step(engine, batch):
     return loss_vals
 
 #Set up the model and optimizer
-model = MaskInference.build(stft_params.window_length//2+1, **configs['model_params']).to(device)
+if model_type=='Mask':
+    model = MaskInference.build(stft_params.window_length//2+1, **configs['model_params']).to(device)
+elif model_type=='UNet':
+    model = UNetSpect.build(**configs['model_params']).to(device)
+    
 optimizer = torch.optim.Adam(model.parameters(), **configs['optimizer_params'])
 
 # Create nussl ML engine
