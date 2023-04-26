@@ -1,17 +1,20 @@
 batch_size: 10
 loss_type: L1
 model_params:
-  in_channels: 1
-  init_features: 16
-  out_channels: 1
-  logscale: true
-model_type: UNet
+  activation: sigmoid
+  bidirectional: true
+  dropout: 0.1
+  hidden_size: 128
+  num_audio_channels: 1
+  num_layers: 15
+  num_sources: 1
+model_type: Mask
 optimizer_params:
   lr: 0.001
-save_name: ST_unet_16f_logscale
+save_name: ST_mask_15layer
 stft_params:
-  hop_length: 512
-  window_length: 2047
+  hop_length: 128
+  window_length: 512
   window_type: sqrt_hann
 test_folder: data/musdb18hq/test
 train_folder: data/musdb18hq/train
