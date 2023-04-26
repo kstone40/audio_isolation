@@ -9,20 +9,30 @@ import os
 import json
 from nussl.datasets import transforms as nussl_tfm
 from pathlib import Path
+import warnings
+warnings.simplefilter("ignore")
 
 from models.MaskInference import MaskInference
 from models.UNet import UNetSpect
 nussl.ml.register_module(MaskInference)
 nussl.ml.register_module(UNetSpect)
 
-eval_list = ['ST_mask_10layer']
+eval_list = ['ST_mask_15layer','ST_mask_10layer','ST_mask_5layer','ST_mask_1layer',
+             'ST_mask_10layer_L2',
+             'ST_mask_256hidden','ST_mask_32hidden',
+             'ST_unet_32f','ST_unet_16f','ST_unet_8f'
+            ]
 
-test_iterations = 5 #number of samples
+test_iterations = 50 #number of samples
 test_duration = 5 #seconds
+
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(f'Using device {device} for evaluation')
 
 data_log = []
 
 for model_name in eval_list:
+    print('Evaluating model: ' + model_name)
     #Load the model and config
     model_path = 'models/'+model_name+'/checkpoints/latest.model.pth'
     config_path = 'models/'+model_name+'/configs.yml'
@@ -33,7 +43,7 @@ for model_name in eval_list:
         f.close()
     stft_params = nussl.STFTParams(**configs['stft_params'])
     
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
     model_checkpoint = torch.load(model_path,map_location=torch.device(device))
     
     #Load in the model
@@ -56,7 +66,7 @@ for model_name in eval_list:
         all_scores[source] = {}
 
     #Individually score each sample in the test data
-    for item in test_data:
+    for i,item in enumerate(test_data):
         separator.audio_signal = item['mix']
         estimates = separator()
 
@@ -72,7 +82,12 @@ for model_name in eval_list:
         evaluator = nussl.evaluation.BSSEvalScale(
             sources, estimates, source_labels=source_keys
         )
-        scores = evaluator.evaluate()
+        try:
+            scores = evaluator.evaluate()
+        except:
+            print(f'Evaluation error with model {model_name} and sample {i}')
+            continue
+            
         for source in source_keys:
             for score in scores[source]:
                 if score not in all_scores[source].keys():
@@ -82,7 +97,7 @@ for model_name in eval_list:
     
     #Record all metadata, and combine the scores with a mean (per model)
     for source in source_keys:
-        row = {'Source':source, 'Model':configs['model_type']}
+        row = {'Source':source, 'Model':configs['model_type'], 'Final Loss':model_checkpoint['metadata']['trainer.state_dict']['output']['loss']}
         if 'stft_params' in configs.keys():
             for stft_param in configs['stft_params'].keys():
                 row['STFT '+stft_param] = configs['stft_params'][stft_param]
