@@ -15,7 +15,7 @@ batch_size: 10
 model_params:
   num_audio_channels: 1
   hidden_size: 64
-  num_layers: 1
+  num_layers: 5
   bidirectional: True
   dropout: 0
   num_sources: 1

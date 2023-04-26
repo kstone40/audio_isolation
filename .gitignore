@@ -2,6 +2,11 @@
 data/MUSDB18HQ
 data
 
+#Added by Kevin
+.nfs*
+*.bash
+*.pth
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
