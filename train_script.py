@@ -26,9 +26,6 @@ with open(args.config,'r') as f:
 utils.logger()
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-model_type = configs['model_type']
-
-
 stft_params = nussl.STFTParams(**configs['stft_params'])
 
 #############CHANGE FOR WAVEFORM##################
@@ -46,9 +43,12 @@ train_dataloader = torch.utils.data.DataLoader(train_data, num_workers=1, batch_
 val_data = data.on_the_fly(stft_params, transform=tfm, fg_path=configs['valid_folder'], **configs['valid_generator_params'])
 val_dataloader = torch.utils.data.DataLoader(val_data, num_workers=1, batch_size=configs['batch_size'])
 
-#############CHANGE FOR WAVEFORM##################
-#Waveform models will use MSE Loss
-loss_fn = nussl.ml.train.loss.L1Loss()
+loss_type = configs['loss_type']
+loss_dict = {'L1': nussl.ml.train.loss.L1Loss,
+             'L2': nussl.ml.train.loss.MSELoss,
+             'MSE': nussl.ml.train.loss.MSELoss,}
+assert loss_type in loss_dict.keys(), f'Loss type must be one of {loss_dict.keys()}'
+loss_fn = loss_dict[loss_type]()
 
 def train_step(engine, batch):
     optimizer.zero_grad()
@@ -61,7 +61,7 @@ def train_step(engine, batch):
     loss.backward()
     optimizer.step()
     
-    loss_vals = {'loss_L1':loss.item(), 'loss':loss.item()}
+    loss_vals = {'loss':loss.item()}
     
     return loss_vals
 
@@ -69,9 +69,13 @@ def val_step(engine, batch):
     with torch.no_grad():
         output = model(batch)
     loss = loss_fn(output['estimates'],batch['source_magnitudes'])  
-    loss_vals = {'loss_L1': loss.item(), 'loss':loss.item()}
+    loss_vals = {'loss':loss.item()}
     return loss_vals
 
+model_type = configs['model_type']
+model_dict = {'Mask': MaskInference,
+              'UNet': UNetSpect}
+assert model_type in model_dict.keys(), f'Model type must be one of {model_dict.keys()}'
 #Set up the model and optimizer
 if model_type=='Mask':
     model = MaskInference.build(stft_params.window_length//2+1, **configs['model_params']).to(device)

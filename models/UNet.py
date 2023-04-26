@@ -3,30 +3,21 @@ from nussl.ml.networks.modules import AmplitudeToDB, BatchNorm, RecurrentStack, 
 from torch import nn
 import torch
 
-
-
 class UNetSpect(nn.Module):
     
-    def __init__(self, in_channels=1, out_channels=1, init_features=16):
+    def __init__(self, in_channels=1, out_channels=1, init_features=16, logscale=True):
         super().__init__()
         
-        # self.amplitude_to_db = AmplitudeToDB()
-        # self.input_normalization = BatchNorm(num_features)
-        # self.recurrent_stack = RecurrentStack(
-        #     num_features * num_audio_channels, hidden_size, 
-        #     num_layers, bool(bidirectional), dropout
-        # )
-        # hidden_size = hidden_size * (int(bidirectional) + 1)
-        # self.embedding = Embedding(num_features, hidden_size, 
-        #                         num_sources, activation, 
-        #                         num_audio_channels)
-        
+        #Basic scaling parameters
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.features = init_features
         
-        #self.amplitude_to_db = AmplitudeToDB()
+        #Scale spectrograms to dB range (logscale)
+        self.amplitude_to_db = AmplitudeToDB()
+        self.logscale = logscale
     
+        #Encoding convolutions down
         self.down_conv1 = UNetSpect.conv_block(self.in_channels, self.features)
         self.down_conv2 = UNetSpect.conv_block(self.features, self.features*2)
         self.down_conv3 = UNetSpect.conv_block(self.features*2, self.features*4)
@@ -35,6 +26,7 @@ class UNetSpect(nn.Module):
         
         self.max_pool = nn.MaxPool2d(kernel_size=2, stride=2)
         
+        #Decoding deconvolutions up
         self.transpose1 = nn.ConvTranspose2d(self.features*16, self.features*8, kernel_size=2, stride=2)
         self.up_conv1 = UNetSpect.conv_block(self.features*16, self.features*8)
         self.transpose2 = nn.ConvTranspose2d(self.features*8, self.features*4, kernel_size=2, stride=2)
@@ -44,27 +36,20 @@ class UNetSpect(nn.Module):
         self.transpose4 = nn.ConvTranspose2d(self.features*2, self.features, kernel_size=2, stride=2)
         self.up_conv4 = UNetSpect.conv_block(self.features*2, self.features)
         
+        #Final convolution to calculate mask
         self.out = nn.Conv2d(self.features, self.out_channels, kernel_size=1)
         
-        
-        
     def forward(self, data):
-        #print(data.size())
-        mix_magnitude = data.unsqueeze(4) # save for masking
+
+        mix_magnitude = data.unsqueeze(4)
+        
+        #Scale spectrograms to dB range (logscale)
+        if self.logscale:
+            data = self.amplitude_to_db(data)
+            
         data = data.transpose(3, 1).transpose(2, 3)
         
-        # data = self.amplitude_to_db(mix_magnitude)
-        # data = self.input_normalization(data)
-        # data = self.recurrent_stack(data)
-        # mask = self.embedding(data)
-        # estimates = mix_magnitude.unsqueeze(-1) * mask
-        
-        # output = {
-        #     'mask': mask,
-        #     'estimates': estimates
-        # }
-        #data = self.amplitude_to_db(data)
-        
+        #Encoding convolutions down
         down_conv1 = self.down_conv1(data)
         down_conv1_max = self.max_pool(down_conv1)
         down_conv2 = self.down_conv2(down_conv1_max)
@@ -73,9 +58,9 @@ class UNetSpect(nn.Module):
         down_conv3_max = self.max_pool(down_conv3)
         down_conv4 = self.down_conv4(down_conv3_max)
         down_conv4_max = self.max_pool(down_conv4)
-        
         down_conv5 = self.down_conv5(down_conv4_max)
 
+        #Decoding convolutions up
         trans1 = self.transpose1(down_conv5)
         up_conv1 = self.up_conv1(torch.cat([down_conv4, trans1], 1))
         trans2 = self.transpose2(up_conv1)
@@ -85,9 +70,9 @@ class UNetSpect(nn.Module):
         trans4 = self.transpose4(up_conv3)
         up_conv4 = self.up_conv4(torch.cat([down_conv1, trans4], 1))
         
+        #Final deconvolution to get mask
         mask = self.out(up_conv4)
         mask = mask.transpose(1, 3).transpose(1, 2).unsqueeze(4)
-        
         estimates = mix_magnitude * mask
         
         output = {
@@ -113,7 +98,7 @@ class UNetSpect(nn.Module):
     
     # Added function
     @classmethod
-    def build(cls, in_channels=1, out_channels=1, init_features=16):
+    def build(cls, in_channels=1, out_channels=1, init_features=16, logscale=True):
         # Step 1. Register our model with nussl
         nussl.ml.register_module(cls)
         
@@ -122,21 +107,13 @@ class UNetSpect(nn.Module):
             'model': {
                 'class': 'UNetSpect',
                 'args': {
-                    # 'num_features': num_features,
-                    # 'num_audio_channels': num_audio_channels,
-                    # 'hidden_size': hidden_size,
-                    # 'num_layers': num_layers,
-                    # 'bidirectional': bidirectional,
-                    # 'dropout': dropout,
-                    # 'num_sources': num_sources,
-                    # 'activation': activation
                     'in_channels': in_channels,
                     'out_channels': out_channels,
-                    'init_features': init_features
+                    'init_features': init_features,
+                    'logscale': logscale
                 }
             }
         }
-        
         
         # Step 2b: Define the connections between input and output.
         # Here, the mix_magnitude key is the only input to the model.

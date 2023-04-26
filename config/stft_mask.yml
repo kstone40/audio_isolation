@@ -1,3 +1,5 @@
+model_type: Mask
+loss_type: L1
 stft_params: 
   window_length: 512
   hop_length: 128
@@ -15,14 +17,14 @@ batch_size: 10
 model_params:
   num_audio_channels: 1
   hidden_size: 64
-  num_layers: 5
+  num_layers: 10
   bidirectional: True
-  dropout: 0
+  dropout: 0.1
   num_sources: 1
   activation: 'sigmoid'
 optimizer_params:
-  lr: 0.01
+  lr: 0.001
 train_params:
   epoch_length: 25
   max_epochs: 25
-save_name: 'stft_mask_try_overfit'
+save_name: 'ST_mask_10layer'

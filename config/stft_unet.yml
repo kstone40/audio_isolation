@@ -1,4 +1,5 @@
 model_type: UNet
+loss_type: L1
 stft_params: 
   window_length: 2047
   hop_length: 512
@@ -16,10 +17,11 @@ batch_size: 10
 model_params:
   in_channels: 1
   out_channels: 1
-  init_features: 64
+  init_features: 16
+logscale: True
 optimizer_params:
   lr: 0.001
 train_params:
   epoch_length: 25
   max_epochs: 25
-save_name: 'ST_unet_64f'
+save_name: 'ST_unet_16f'

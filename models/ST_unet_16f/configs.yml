@@ -1,4 +1,6 @@
 batch_size: 10
+logscale: true
+loss_type: L1
 model_params:
   in_channels: 1
   init_features: 16
@@ -6,7 +8,7 @@ model_params:
 model_type: UNet
 optimizer_params:
   lr: 0.001
-save_name: test_unet
+save_name: ST_unet_16f_logscale
 stft_params:
   hop_length: 512
   window_length: 2047

@@ -1,3 +1,5 @@
+model_type: Mask
+loss_type: L1
 stft_params: 
   window_length: 512
   hop_length: 128
