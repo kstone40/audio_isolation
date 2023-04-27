@@ -8,6 +8,7 @@ import nussl
 from nussl.datasets import transforms as nussl_tfm
 from models.MaskInference import MaskInference
 from models.UNet import UNetSpect
+from models.Filterbank import Filterbank
 from utils import utils, data
 from pathlib import Path
 import yaml, argparse
@@ -26,17 +27,40 @@ with open(args.config,'r') as f:
 utils.logger()
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-stft_params = nussl.STFTParams(**configs['stft_params'])
+model_type = configs['model_type']
+model_dict = {'Mask': MaskInference,
+              'UNet': UNetSpect,
+              'Filterbank':Filterbank
+             }
+waveform_models = ['Filterbank']
+assert model_type in model_dict.keys(), f'Model type must be one of {model_dict.keys()}'
 
-#############CHANGE FOR WAVEFORM##################
-tfm = nussl_tfm.Compose([
-    nussl_tfm.SumSources([['bass', 'drums', 'other']]),
-    nussl_tfm.MagnitudeSpectrumApproximation(),
-    nussl_tfm.IndexSources('source_magnitudes', 1),
-    nussl_tfm.ToSeparationModel(),
-])
+if model_type in waveform_models:
+    stft_params = None
+    
+    tfm = nussl_tfm.Compose([
+        nussl_tfm.SumSources([['bass', 'drums', 'other']]),
+        nussl_tfm.GetAudio(),
+        nussl_tfm.IndexSources('source_audio', 1),
+        nussl_tfm.ToSeparationModel(),
+    ])
+    
+    target_key = 'source_audio'
+    output_key = 'audio'
+    
+else:
+    stft_params = nussl.STFTParams(**configs['stft_params'])
+    
+    tfm = nussl_tfm.Compose([
+        nussl_tfm.SumSources([['bass', 'drums', 'other']]),
+        nussl_tfm.MagnitudeSpectrumApproximation(),
+        nussl_tfm.IndexSources('source_magnitudes', 1),
+        nussl_tfm.ToSeparationModel(),
+    ])
+    
+    target_key = 'source_magnitudes'
+    output_key = 'estimates'
 
-#############CHANGE FOR WAVEFORM##################
 train_data = data.on_the_fly(stft_params, transform=tfm, fg_path=configs['train_folder'], **configs['train_generator_params'])
 train_dataloader = torch.utils.data.DataLoader(train_data, num_workers=1, batch_size=configs['batch_size'])
 
@@ -47,6 +71,7 @@ loss_type = configs['loss_type']
 loss_dict = {'L1': nussl.ml.train.loss.L1Loss,
              'L2': nussl.ml.train.loss.MSELoss,
              'MSE': nussl.ml.train.loss.MSELoss,}
+
 assert loss_type in loss_dict.keys(), f'Loss type must be one of {loss_dict.keys()}'
 loss_fn = loss_dict[loss_type]()
 
@@ -55,7 +80,7 @@ def train_step(engine, batch):
     
     #Forward pass
     output = model(batch)
-    loss = loss_fn(output['estimates'],batch['source_magnitudes'])
+    loss = loss_fn(output[output_key],batch[target_key])
     
     #Backward pass
     loss.backward()
@@ -68,20 +93,19 @@ def train_step(engine, batch):
 def val_step(engine, batch):
     with torch.no_grad():
         output = model(batch)
-    loss = loss_fn(output['estimates'],batch['source_magnitudes'])  
+    loss = loss_fn(output[output_key],batch[target_key])  
     loss_vals = {'loss':loss.item()}
     return loss_vals
 
-model_type = configs['model_type']
-model_dict = {'Mask': MaskInference,
-              'UNet': UNetSpect}
-assert model_type in model_dict.keys(), f'Model type must be one of {model_dict.keys()}'
+
 #Set up the model and optimizer
 if model_type=='Mask':
     model = MaskInference.build(stft_params.window_length//2+1, **configs['model_params']).to(device)
 elif model_type=='UNet':
     model = UNetSpect.build(**configs['model_params']).to(device)
-    
+elif model_type=='Filterbank':
+    model = Filterbank.build(**configs['model_params']).to(device)
+
 optimizer = torch.optim.Adam(model.parameters(), **configs['optimizer_params'])
 
 # Create nussl ML engine

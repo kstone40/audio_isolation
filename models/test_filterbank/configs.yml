@@ -1,0 +1,31 @@
+batch_size: 10
+loss_type: L2
+model_params:
+  activation: sigmoid
+  bidirectional: true
+  dropout: 0.3
+  hidden_size: 50
+  hop_length: 32
+  num_audio_channels: 1
+  num_features: 128
+  num_filters: 128
+  num_layers: 2
+  num_sources: 1
+  window_type: sqrt_hann
+model_type: Filterbank
+optimizer_params:
+  lr: 0.01
+save_name: test_filterbank
+stft_params: null
+test_folder: data/musdb18hq/test
+train_folder: data/musdb18hq/train
+train_generator_params:
+  coherent_prob: 1.0
+  num_mixtures: 1000000
+train_params:
+  epoch_length: 10
+  max_epochs: 10
+valid_folder: data/musdb18hq/validation
+valid_generator_params:
+  coherent_prob: 1.0
+  num_mixtures: 10

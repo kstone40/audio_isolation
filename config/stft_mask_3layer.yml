@@ -1,6 +1,9 @@
-model_type: Filterbank
-loss_type: L2
-stft_params: null
+model_type: Mask
+loss_type: L1
+stft_params: 
+  window_length: 512
+  hop_length: 128
+  window_type: 'sqrt_hann'
 train_folder: 'data/musdb18hq/train'
 valid_folder: 'data/musdb18hq/validation'
 test_folder: 'data/musdb18hq/test'
@@ -12,20 +15,16 @@ valid_generator_params:
   coherent_prob: 1.0
 batch_size: 10
 model_params:
-  num_features: 128
   num_audio_channels: 1
   hidden_size: 50
-  num_layers: 2
+  num_layers: 3
   bidirectional: True
   dropout: 0.3
   num_sources: 1
   activation: 'sigmoid'
-  window_type: 'sqrt_hann'
-  num_filters: 128
-  hop_length: 32
 optimizer_params:
-  lr: 0.01
+  lr: 0.001
 train_params:
-  epoch_length: 10
-  max_epochs: 10
-save_name: 'test_filterbank'
+  epoch_length: 25
+  max_epochs: 25
+save_name: 'ST_mask_3layer'

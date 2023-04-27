@@ -14,13 +14,15 @@ warnings.simplefilter("ignore")
 
 from models.MaskInference import MaskInference
 from models.UNet import UNetSpect
+from models.Filterbank import Filterbank
 nussl.ml.register_module(MaskInference)
 nussl.ml.register_module(UNetSpect)
+nussl.ml.register_module(Filterbank)
 
-eval_list = ['ST_mask_15layer','ST_mask_10layer','ST_mask_5layer','ST_mask_1layer',
-             'ST_mask_10layer_L2',
-             'ST_mask_256hidden','ST_mask_32hidden',
-             'ST_unet_32f','ST_unet_16f','ST_unet_8f'
+eval_list = ['test_filterbank',
+             'ST_mask_tutorial_defaults',
+             'ST_mask_1layer','ST_mask_3layer','ST_mask5layer',
+             'ST_mask_0.1dropout','ST_mask_0.5dropout',
             ]
 
 test_iterations = 50 #number of samples
@@ -37,20 +39,29 @@ for model_name in eval_list:
     model_path = 'models/'+model_name+'/checkpoints/latest.model.pth'
     config_path = 'models/'+model_name+'/configs.yml'
     
-    #Load yaml configs into configs dictionary
+   #Load yaml configs into configs dictionary
     with open(config_path,'r') as f:
         configs = yaml.safe_load(f)
         f.close()
-    stft_params = nussl.STFTParams(**configs['stft_params'])
-    
+
+    model_type = configs['model_type']
+    waveform_models = ['Filterbank']
+    if model_type in waveform_models:
+        stft_params = None
+
+        separator = nussl.separation.deep.DeepAudioEstimation(
+            nussl.AudioSignal(), model_path='overfit/checkpoints/latest.model.pth',
+            device='cpu',
+        )
+    else:
+        stft_params = nussl.STFTParams(**configs['stft_params'])
+
+        separator = nussl.separation.deep.DeepMaskEstimation(
+            nussl.AudioSignal(), model_path=model_path,
+            device='cpu',
+        )
 
     model_checkpoint = torch.load(model_path,map_location=torch.device(device))
-    
-    #Load in the model
-    separator = nussl.separation.deep.DeepMaskEstimation(
-        nussl.AudioSignal(), model_path=model_path,
-        device=device,
-    )
     
     #Test on the data
     test_folder = configs['test_folder']
@@ -97,10 +108,11 @@ for model_name in eval_list:
     
     #Record all metadata, and combine the scores with a mean (per model)
     for source in source_keys:
-        row = {'Source':source, 'Model':configs['model_type'], 'Final Loss':model_checkpoint['metadata']['trainer.state_dict']['output']['loss']}
+        row = {'Source':source, 'Model':configs['model_type'], 'Loss Type':configs['loss_type'], 'Final Loss':model_checkpoint['metadata']['trainer.state_dict']['output']['loss']}
         if 'stft_params' in configs.keys():
-            for stft_param in configs['stft_params'].keys():
-                row['STFT '+stft_param] = configs['stft_params'][stft_param]
+            if configs['stft_params'] is not None:
+                for stft_param in configs['stft_params'].keys():
+                    row['STFT '+stft_param] = configs['stft_params'][stft_param]
         for model_param in configs['model_params'].keys():
             row['Model '+model_param] = configs['model_params'][model_param]
         for optimizer_param in configs['optimizer_params'].keys():
