@@ -19,9 +19,9 @@ nussl.ml.register_module(MaskInference)
 nussl.ml.register_module(UNetSpect)
 nussl.ml.register_module(Filterbank)
 
-eval_list = ['test_filterbank',
+eval_list = [
              'ST_mask_tutorial_defaults',
-             'ST_mask_1layer','ST_mask_3layer','ST_mask5layer',
+             'ST_mask_1layer','ST_mask_3layer','ST_mask_5layer',
              'ST_mask_0.1dropout','ST_mask_0.5dropout',
             ]
 
