@@ -8,7 +8,7 @@ class Filterbank(nn.Module):
     def __init__(self, num_features, num_audio_channels, hidden_size,
                 num_layers, bidirectional, dropout, num_sources, 
                 num_filters, hop_length, window_type='rectangular', # Learned filterbank parameters
-                activation=['sigmoid', 'unit_norm']):
+                activation=['sigmoid']): #want to have ['unit_norm'] additionally, if there is more than 1 source
         super().__init__()
         
         self.representation = LearnedFilterBank(

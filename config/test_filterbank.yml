@@ -1,9 +1,6 @@
 model_type: Filterbank
 loss_type: L2
-stft_params: 
-  window_length: 512
-  hop_length: 128
-  window_type: sqrt_hann
+stft_params: null
 train_folder: 'data/musdb18hq/train'
 valid_folder: 'data/musdb18hq/validation'
 test_folder: 'data/musdb18hq/test'
@@ -21,8 +18,9 @@ model_params:
   num_layers: 2
   bidirectional: True
   dropout: 0.3
-  num_sources: 2
-  activation: ['sigmoid','unit_norm']
+  num_sources: 1
+  activation: 'sigmoid'
+  window_type: 'sqrt_hann'
   num_filters: 128
   hop_length: 32
 optimizer_params:
