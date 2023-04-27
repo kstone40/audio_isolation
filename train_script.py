@@ -37,7 +37,7 @@ tfm = nussl_tfm.Compose([
 ])
 
 #############CHANGE FOR WAVEFORM##################
-train_data = data.on_the_fly(stft_params, transform=tfm, fg_path=configs['test_folder'], **configs['train_generator_params'])
+train_data = data.on_the_fly(stft_params, transform=tfm, fg_path=configs['train_folder'], **configs['train_generator_params'])
 train_dataloader = torch.utils.data.DataLoader(train_data, num_workers=1, batch_size=configs['batch_size'])
 
 val_data = data.on_the_fly(stft_params, transform=tfm, fg_path=configs['valid_folder'], **configs['valid_generator_params'])
