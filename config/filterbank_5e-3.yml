@@ -15,9 +15,9 @@ model_params:
   num_features: 128
   num_audio_channels: 1
   hidden_size: 50
-  num_layers: 3
+  num_layers: 2
   bidirectional: True
-  dropout: 0.5
+  dropout: 0.3
   num_sources: 1
   activation: 'sigmoid'
   window_type: 'sqrt_hann'
@@ -28,4 +28,4 @@ optimizer_params:
 train_params:
   epoch_length: 25
   max_epochs: 15
-save_name: 'filterbank_3L_0.5P'
+save_name: 'filterbank_5e-3LR'

@@ -12,7 +12,7 @@ valid_generator_params:
   coherent_prob: 1.0
 batch_size: 10
 model_params:
-  num_features: 128
+  num_features: 32
   num_audio_channels: 1
   hidden_size: 50
   num_layers: 3
@@ -21,11 +21,11 @@ model_params:
   num_sources: 1
   activation: 'sigmoid'
   window_type: 'sqrt_hann'
-  num_filters: 128
+  num_filters: 32
   hop_length: 32
 optimizer_params:
   lr: 0.005
 train_params:
   epoch_length: 25
   max_epochs: 15
-save_name: 'filterbank_3L_0.5P'
+save_name: 'filterbank_3L_0.5P_32f'

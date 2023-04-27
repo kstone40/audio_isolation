@@ -1,9 +1,9 @@
-model_type: UNet
+model_type: Mask
 loss_type: L1
 stft_params: 
-  window_length: 2047
-  hop_length: 512
-  window_type: sqrt_hann
+  window_length: 512
+  hop_length: 64
+  window_type: 'sqrt_hann'
 train_folder: 'data/musdb18hq/train'
 valid_folder: 'data/musdb18hq/validation'
 test_folder: 'data/musdb18hq/test'
@@ -15,13 +15,16 @@ valid_generator_params:
   coherent_prob: 1.0
 batch_size: 10
 model_params:
-  in_channels: 1
-  out_channels: 1
-  init_features: 16
-  logscale: True
+  num_audio_channels: 1
+  hidden_size: 50
+  num_layers: 2
+  bidirectional: True
+  dropout: 0.3
+  num_sources: 1
+  activation: 'sigmoid'
 optimizer_params:
   lr: 0.001
 train_params:
   epoch_length: 25
   max_epochs: 25
-save_name: 'ST_unet_16f_v2'
+save_name: 'ST_mask_64hop'

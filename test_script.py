@@ -19,10 +19,17 @@ nussl.ml.register_module(MaskInference)
 nussl.ml.register_module(UNetSpect)
 nussl.ml.register_module(Filterbank)
 
-eval_list = [
-             'ST_mask_tutorial_defaults',
+eval_list = ['ST_mask_tutorial_defaults',
              'ST_mask_1layer','ST_mask_3layer','ST_mask_5layer',
-             'ST_mask_0.1dropout','ST_mask_0.5dropout',
+             'ST_mask_0.1dropout','ST_mask_0.5dropout','ST_mask_0.7dropout',
+             'ST_mask_1e-2LR','ST_mask_1e-4LR',
+             'ST_mask_3L_0.5P',
+             'ST_mask_25h','ST_mask_100h',
+             'ST_mask_64hop','ST_mask_256hop',
+             'ST_unet_16f','ST_unet_8f',
+             'filterbank',
+             'filterbank_1e-3LR','filterbank_5e-3LR',
+             'filterbank_3L_0.5P','filterbank_3L_0.5P_16f',
             ]
 
 test_iterations = 50 #number of samples
@@ -50,7 +57,7 @@ for model_name in eval_list:
         stft_params = None
 
         separator = nussl.separation.deep.DeepAudioEstimation(
-            nussl.AudioSignal(), model_path='overfit/checkpoints/latest.model.pth',
+            nussl.AudioSignal(), model_path=model_path,
             device='cpu',
         )
     else:
