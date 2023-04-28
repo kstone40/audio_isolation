@@ -26,10 +26,12 @@ eval_list = ['ST_mask_tutorial_defaults',
              'ST_mask_3L_0.5P',
              'ST_mask_25h','ST_mask_100h',
              'ST_mask_64hop','ST_mask_256hop',
-             'ST_unet_16f','ST_unet_8f',
+             'ST_mask_128w','ST_mask_2048w',
+             'ST_unet_16f_v2','ST_unet_8f',
              'filterbank',
              'filterbank_1e-3LR','filterbank_5e-3LR',
-             'filterbank_3L_0.5P','filterbank_3L_0.5P_16f',
+             'filterbank_3L_0.5P',
+             'filterbank_3L_0.5P_16f','filterbank_3L_0.5P_32f',
             ]
 
 test_iterations = 50 #number of samples
