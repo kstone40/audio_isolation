@@ -40,28 +40,58 @@ assert model_type in model_dict.keys(), f'Model type must be one of {model_dict.
 if model_type in waveform_models:
     stft_params = None
     
-    tfm = nussl_tfm.Compose([
-        nussl_tfm.SumSources([['bass', 'drums', 'other']]),
-        nussl_tfm.GetAudio(),
-        nussl_tfm.IndexSources('source_audio', 1),
-        nussl_tfm.ToSeparationModel(),
-    ])
+    if configs['model_params']['num_sources']==1:
+        tfm = nussl_tfm.Compose([
+            nussl_tfm.SumSources([['bass', 'drums', 'other']]),
+            nussl_tfm.GetAudio(),
+            nussl_tfm.IndexSources('source_audio', 1),
+            nussl_tfm.ToSeparationModel(),
+        ])
+    elif configs['model_params']['num_sources']==2:
+        tfm = nussl_tfm.Compose([
+            nussl_tfm.SumSources([['bass', 'drums', 'other']]),
+            nussl_tfm.GetAudio(),
+            nussl_tfm.ToSeparationModel(),
+        ])
+    elif configs['model_params']['num_sources']==4:
+        tfm = nussl_tfm.Compose([
+            nussl_tfm.GetAudio(),
+            nussl_tfm.ToSeparationModel(),
+        ])
+    else:
+        raise ValueError('Number of sources can only be 1 (vocals), 2 (vocals/accompaniement), or 4 (full sep)')
     
     target_key = 'source_audio'
     output_key = 'audio'
+    input_key = 'mix_audio'
     
 else:
     stft_params = nussl.STFTParams(**configs['stft_params'])
     
-    tfm = nussl_tfm.Compose([
-        nussl_tfm.SumSources([['bass', 'drums', 'other']]),
-        nussl_tfm.MagnitudeSpectrumApproximation(),
-        nussl_tfm.IndexSources('source_magnitudes', 1),
-        nussl_tfm.ToSeparationModel(),
-    ])
+    if configs['model_params']['num_sources']==1:
+        tfm = nussl_tfm.Compose([
+            nussl_tfm.SumSources([['bass', 'drums', 'other']]),
+            nussl_tfm.MagnitudeSpectrumApproximation(),
+            nussl_tfm.IndexSources('source_magnitudes', 1),
+            nussl_tfm.ToSeparationModel(),
+        ])
+    elif configs['model_params']['num_sources']==2:
+        tfm = nussl_tfm.Compose([
+            nussl_tfm.SumSources([['bass', 'drums', 'other']]),
+            nussl_tfm.MagnitudeSpectrumApproximation(),
+            nussl_tfm.ToSeparationModel(),
+        ])
+    elif configs['model_params']['num_sources']==4:
+        tfm = nussl_tfm.Compose([
+            nussl_tfm.MagnitudeSpectrumApproximation(),
+            nussl_tfm.ToSeparationModel(),
+        ])
+    else:
+        raise ValueError('Number of sources can only be 1 (vocals), 2 (vocals/accompaniement), or 4 (full sep)')
     
     target_key = 'source_magnitudes'
     output_key = 'estimates'
+    input_key = 'mix_magnitude'
 
 train_data = data.on_the_fly(stft_params, transform=tfm, fg_path=configs['train_folder'], **configs['train_generator_params'])
 train_dataloader = torch.utils.data.DataLoader(train_data, num_workers=1, batch_size=configs['batch_size'])
@@ -83,7 +113,8 @@ def train_step(engine, batch):
     #Forward pass
     output = model(batch)
     loss = loss_fn(output[output_key],batch[target_key])
-     
+    #print(f'Target TRAIN batch mean: {batch[target_key].mean()}')
+        
     #Backward pass
     loss.backward()
     optimizer.step()
@@ -97,6 +128,7 @@ def val_step(engine, batch):
     with torch.no_grad():
         output = model(batch)
     loss = loss_fn(output[output_key],batch[target_key])  
+    #print(f'Target VAL batch mean: {batch[target_key].mean()}')
     loss_vals = {'L1Loss': loss.item(),
                  'loss':loss.item()}
     

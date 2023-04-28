@@ -18,14 +18,14 @@ model_params:
   num_layers: 3
   bidirectional: True
   dropout: 0.3
-  num_sources: 1
+  num_sources: 4
   activation: 'sigmoid'
   window_type: 'sqrt_hann'
   num_filters: 128
   hop_length: 32
 optimizer_params:
-  lr: 0.01
+  lr: 0.001
 train_params:
-  epoch_length: 10
-  max_epochs: 10
-save_name: 'filterbank_default'
+  epoch_length: 100
+  max_epochs: 20
+save_name: 'filterbank_4source_100L'

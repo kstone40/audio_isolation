@@ -14,8 +14,8 @@ model_params:
   window_type: sqrt_hann
 model_type: Filterbank
 optimizer_params:
-  lr: 0.001
-save_name: filterbank_default
+  lr: 0.0001
+save_name: filterbank_slowlearning_L2
 stft_params: null
 test_folder: data/musdb18hq/test
 train_folder: data/musdb18hq/train
@@ -24,7 +24,7 @@ train_generator_params:
   num_mixtures: 1000000
 train_params:
   epoch_length: 10
-  max_epochs: 50
+  max_epochs: 100
 valid_folder: data/musdb18hq/validation
 valid_generator_params:
   coherent_prob: 1.0
