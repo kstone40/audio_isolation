@@ -7,7 +7,7 @@ import torch.nn.functional as F
 
 
 class WaveUNet(nn.Module):
-    def __init__(self, in_channels=1, out_channels=1, features=16):
+    def __init__(self, num_sources, num_audio_channels, activation = 'sigmoid', features=16):
         super(WaveUNet, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -63,7 +63,7 @@ class WaveUNet(nn.Module):
         # estimates = mix_magnitude * mask
         
         output = {
-            'estimates': estimates
+            'audio': estimates
         }
         
         return output
@@ -84,7 +84,7 @@ class WaveUNet(nn.Module):
     
     # Added function
     @classmethod
-    def build(cls, in_channels=1, out_channels=1, features=16):
+    def build(cls, num_sources, num_audio_channels, activation = 'sigmoid', features=16):
         # Step 1. Register our model with nussl
         nussl.ml.register_module(cls)
         
@@ -93,14 +93,9 @@ class WaveUNet(nn.Module):
             'model': {
                 'class': 'WaveUNet',
                 'args': {
-                    # 'num_features': num_features,
-                    # 'num_audio_channels': num_audio_channels,
-                    # 'hidden_size': hidden_size,
-                    # 'num_layers': num_layers,
-                    # 'bidirectional': bidirectional,
-                    # 'dropout': dropout,
-                    # 'num_sources': num_sources,
-                    # 'activation': activation
+                    'num_audio_channels': num_audio_channels,
+                    'num_sources': num_sources,
+                    'activation': activation
                     'in_channels': in_channels,
                     'out_channels': out_channels,
                     'features': features
@@ -119,13 +114,13 @@ class WaveUNet(nn.Module):
         # change the keys to model:mask, model:estimates. The lines below 
         # alias model:mask to just mask, and model:estimates to estimates.
         # This will be important later when we actually deploy our model.
-        for key in ['estimates']:
+        for key in ['audio']:
             modules[key] = {'class': 'Alias'}
             connections.append([key, [f'model:{key}']])
         
         # Step 2d. There are two outputs from our SeparationModel: estimates and mask.
         # Then put it all together.
-        output = ['estimates']
+        output = ['audio']
         config = {
             'name': cls.__name__,
             'modules': modules,

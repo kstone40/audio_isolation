@@ -41,12 +41,8 @@ class MaskInference(nn.Module):
         
         #FC layers to calculate mask (or embedding)
         mask = self.embedding(data)
-        mix_magnitude = mix_magnitude.unsqueeze(-1)
         
-        #print(mix_magnitude.shape)
-        #print(mask.shape)
-        
-        estimates = mix_magnitude * mask
+        estimates = mix_magnitude.unsqueeze(-1) * mask
         
         output = {
             'mask': mask,

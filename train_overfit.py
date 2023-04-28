@@ -5,7 +5,6 @@ from models.MaskInference import MaskInference
 from models.UNet import UNetSpect
 from models.Filterbank import Filterbank
 from models.Waveform import Waveform
-from models.WaveUNet import WaveUNet
 from utils import utils, data
 from pathlib import Path
 import yaml, argparse
@@ -29,7 +28,6 @@ model_dict = {'Mask': MaskInference,
               'UNet': UNetSpect,
               'Filterbank':Filterbank,
               'Waveform':Waveform,
-              'WaveUNet':WaveUNet
              }
 waveform_models = ['Filterbank','Waveform','WaveUNet']
 assert model_type in model_dict.keys(), f'Model type must be one of {model_dict.keys()}'
@@ -61,7 +59,7 @@ else:
     output_key = 'estimates'
 
 
-configs['batch_size'] = 2
+configs['batch_size'] = 1
 configs['train_generator_params']['num_mixtures']=10
 configs['valid_generator_params']['num_mixtures']=1
 
@@ -128,7 +126,7 @@ optimizer = torch.optim.Adam(model.parameters(), **configs['optimizer_params'])
 # Create nussl ML engine
 trainer, validator = nussl.ml.train.create_train_and_validation_engines(train_step, val_step, device=device)
 
-N_ITERATIONS = 500 #1000
+N_ITERATIONS = 1000 #1000
 loss_history = [] # For bookkeeping
 
 for i in range(N_ITERATIONS):

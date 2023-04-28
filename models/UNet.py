@@ -5,20 +5,21 @@ import torch
 
 class UNetSpect(nn.Module):
     
-    def __init__(self, in_channels=1, out_channels=1, init_features=16, logscale=True):
+    def __init__(self, num_sources, num_audio_channels, init_features=16,
+                 activation = 'sigmoid', logscale=True):
         super().__init__()
         
         #Basic scaling parameters
-        self.in_channels = in_channels
-        self.out_channels = out_channels
         self.features = init_features
+        self.num_sources = num_sources
+        self.num_audio_channels = num_audio_channels
         
         #Scale spectrograms to dB range (logscale)
         self.amplitude_to_db = AmplitudeToDB()
         self.logscale = logscale
     
         #Encoding convolutions down
-        self.down_conv1 = UNetSpect.conv_block(self.in_channels, self.features)
+        self.down_conv1 = UNetSpect.conv_block(num_sources, self.features)
         self.down_conv2 = UNetSpect.conv_block(self.features, self.features*2)
         self.down_conv3 = UNetSpect.conv_block(self.features*2, self.features*4)
         self.down_conv4 = UNetSpect.conv_block(self.features*4, self.features*8)
@@ -36,8 +37,8 @@ class UNetSpect(nn.Module):
         self.transpose4 = nn.ConvTranspose2d(self.features*2, self.features, kernel_size=2, stride=2)
         self.up_conv4 = UNetSpect.conv_block(self.features*2, self.features)
         
-        #Final convolution to calculate mask
-        self.out = nn.Conv2d(self.features, self.out_channels, kernel_size=1)
+        ##Final convolution to calculate mask
+        self.out = nn.Conv2d(self.features, num_sources, kernel_size=1)
         
     def forward(self, data):
 
@@ -45,10 +46,11 @@ class UNetSpect(nn.Module):
         mix_magnitude = data
         
         #Scale spectrograms to dB range (logscale)
-        if self.logscale:
-            data = self.amplitude_to_db(data)
+        # if self.logscale:
+        #     data = self.amplitude_to_db(data)
             
         data = data.transpose(3, 1).transpose(2, 3)
+        data = data.tile(1,self.num_sources,1,1)
         
         #Encoding convolutions down
         down_conv1 = self.down_conv1(data)
@@ -56,7 +58,7 @@ class UNetSpect(nn.Module):
         down_conv2 = self.down_conv2(down_conv1_max)
         down_conv2_max = self.max_pool(down_conv2)
         down_conv3 = self.down_conv3(down_conv2_max)
-        down_conv3_max = self.max_pool(down_conv3)
+        down_conv3_max = self.max_pool(down_conv3)s
         down_conv4 = self.down_conv4(down_conv3_max)
         down_conv4_max = self.max_pool(down_conv4)
         down_conv5 = self.down_conv5(down_conv4_max)
@@ -71,18 +73,12 @@ class UNetSpect(nn.Module):
         trans4 = self.transpose4(up_conv3)
         up_conv4 = self.up_conv4(torch.cat([down_conv1, trans4], 1))
         
-        #Final deconvolution to get mask
-        mask = self.out(up_conv4)
-        
-        mask = mask.transpose(3, 2).transpose(1, 3).unsqueeze(-2)
-        
+        #Final deconvolution
+        out = self.out(up_conv4).transpose(3, 2).transpose(1, 3)
+        out = out.unsqueeze(-2)
+        mask = out.tile(1,1,1,self.num_audio_channels,1)
 
-        mix_magnitude = mix_magnitude.unsqueeze(-1)
-        
-        #print(mix_magnitude.shape)
-        #print(mask.shape)     
-        
-        estimates = mix_magnitude * mask
+        estimates = mix_magnitude.unsqueeze(-1) * mask
         
         output = {
             'mask': mask,
@@ -107,7 +103,8 @@ class UNetSpect(nn.Module):
     
     # Added function
     @classmethod
-    def build(cls, in_channels=1, out_channels=1, init_features=16, logscale=True):
+    def build(cls, num_sources, num_audio_channels, init_features=16,
+              activation = 'sigmoid', logscale=True):
         # Step 1. Register our model with nussl
         nussl.ml.register_module(cls)
         
@@ -116,8 +113,9 @@ class UNetSpect(nn.Module):
             'model': {
                 'class': 'UNetSpect',
                 'args': {
-                    'in_channels': in_channels,
-                    'out_channels': out_channels,
+                    'num_sources': num_sources,
+                    'num_audio_channels':num_audio_channels,
+                    'activation':activation,
                     'init_features': init_features,
                     'logscale': logscale
                 }

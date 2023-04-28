@@ -15,8 +15,8 @@ valid_generator_params:
   coherent_prob: 1.0
 batch_size: 10
 model_params:
-  in_channels: 1
-  out_channels: 4
+  num_sources: 4
+  num_audio_channels: 1
   init_features: 16
   logscale: True
 optimizer_params:
