@@ -9,6 +9,8 @@ from nussl.datasets import transforms as nussl_tfm
 from models.MaskInference import MaskInference
 from models.UNet import UNetSpect
 from models.Filterbank import Filterbank
+from models.Waveform import Waveform
+from models.WaveUNet import WaveUNet
 from utils import utils, data
 from pathlib import Path
 import yaml, argparse
@@ -30,18 +32,20 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model_type = configs['model_type']
 model_dict = {'Mask': MaskInference,
               'UNet': UNetSpect,
-              'Filterbank':Filterbank
+              'Filterbank':Filterbank,
+              'Waveform':Waveform,
+              'WaveUNet':WaveUNet
              }
-waveform_models = ['Filterbank']
+waveform_models = ['Filterbank','Waveform','WaveUNet']
 assert model_type in model_dict.keys(), f'Model type must be one of {model_dict.keys()}'
 
 if model_type in waveform_models:
     stft_params = None
     
     tfm = nussl_tfm.Compose([
-        nussl_tfm.SumSources([['bass', 'drums', 'other']]),
+        #nussl_tfm.SumSources([['bass', 'drums', 'other']]),
         nussl_tfm.GetAudio(),
-        nussl_tfm.IndexSources('source_audio', 1),
+        #nussl_tfm.IndexSources('source_audio', 1),
         nussl_tfm.ToSeparationModel(),
     ])
     
@@ -52,9 +56,9 @@ else:
     stft_params = nussl.STFTParams(**configs['stft_params'])
     
     tfm = nussl_tfm.Compose([
-        nussl_tfm.SumSources([['bass', 'drums', 'other']]),
+        #nussl_tfm.SumSources([['bass', 'drums', 'other']]),
         nussl_tfm.MagnitudeSpectrumApproximation(),
-        nussl_tfm.IndexSources('source_magnitudes', 1),
+        #nussl_tfm.IndexSources('source_magnitudes', 1),
         nussl_tfm.ToSeparationModel(),
     ])
     
@@ -100,11 +104,11 @@ def val_step(engine, batch):
 
 #Set up the model and optimizer
 if model_type=='Mask':
-    model = MaskInference.build(stft_params.window_length//2+1, **configs['model_params']).to(device)
-elif model_type=='UNet':
-    model = UNetSpect.build(**configs['model_params']).to(device)
-elif model_type=='Filterbank':
-    model = Filterbank.build(**configs['model_params']).to(device)
+    model = model_dict[model_type].build(num_features=stft_params.window_length//2+1,**configs['model_params']).to(device)
+elif model_type == 'Waveform':
+    model = model_dict[model_type].build(num_features=configs['model_params']['num_filters']//2+1,**configs['model_params']).to(device)
+else:
+    model = model_dict[model_type].build(**configs['model_params']).to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), **configs['optimizer_params'])
 

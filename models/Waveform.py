@@ -2,13 +2,13 @@ import torch
 from torch import nn
 import nussl
 from nussl.ml.networks.modules import AmplitudeToDB, BatchNorm, RecurrentStack, Embedding, STFT
-from utils import argbind
+
 
 class Waveform(nn.Module):
     def __init__(self, num_features, num_audio_channels, hidden_size,
-                num_layers, bidirectional, dropout, embedding_size, 
-                num_filters, hop_length, window_type='sqrt_hann', # New STFT parameters
-                activation=['sigmoid', 'unit_norm']):
+                num_layers, bidirectional, dropout, num_sources, 
+                num_filters, hop_length, window_type='sqrt_hann', 
+                activation=['sigmoid']):
         super().__init__()
         
         self.stft = STFT(
@@ -16,7 +16,6 @@ class Waveform(nn.Module):
             hop_length=hop_length, 
             window_type=window_type
         )
-        
         self.amplitude_to_db = AmplitudeToDB()
         self.input_normalization = BatchNorm(num_features)
         self.recurrent_stack = RecurrentStack(
@@ -24,15 +23,13 @@ class Waveform(nn.Module):
             num_layers, bool(bidirectional), dropout
         )
         hidden_size = hidden_size * (int(bidirectional) + 1)
-        self.embedding = Embedding(num_features, hidden_size, 
-                                embedding_size, activation, 
-                                num_audio_channels)
+        self.embedding = Embedding(num_features, hidden_size, num_sources, activation, num_audio_channels)
         
     def forward(self, data):
         # Take STFT inside model
         mix_stft = self.stft(data, direction='transform')
         nb, nt, nf, nac = mix_stft.shape
-        # Stack the mag/phase along the second to last axis
+
         mix_stft = mix_stft.reshape(nb, nt, 2, -1, nac)
         mix_magnitude = mix_stft[:, :, 0, ...] # save for masking
         mix_phase = mix_stft[:, :, 1, ...] # save for reconstruction
@@ -51,16 +48,16 @@ class Waveform(nn.Module):
         estimate_audio = self.stft(estimates, direction='inverse')
         
         output = {
-            'estimates': estimate_audio
+            'audio': estimate_audio
         }
         
         return output
 
     @classmethod
     def build(cls, num_features, num_audio_channels, hidden_size,
-                num_layers, bidirectional, dropout, embedding_size, 
+                num_layers, bidirectional, dropout, num_sources, 
                 num_filters, hop_length, window_type='sqrt_hann', # New STFT parameters
-                activation=['sigmoid', 'unit_norm']):
+                activation='sigmoid'):
         
         # Step 1. Register our model with nussl
         nussl.ml.register_module(cls)
@@ -76,7 +73,7 @@ class Waveform(nn.Module):
                     'num_layers': num_layers,
                     'bidirectional': bidirectional,
                     'dropout': dropout,
-                    'embedding_size': embedding_size,
+                    'num_sources': num_sources,
                     'num_filters': num_filters,
                     'hop_length': hop_length,
                     'window_type': window_type,
@@ -96,7 +93,7 @@ class Waveform(nn.Module):
         # change the keys to model:mask, model:estimates. The lines below 
         # alias model:mask to just mask, and model:estimates to estimates.
         # This will be important later when we actually deploy our model.
-        for key in ['estimates']:
+        for key in ['audio']:
             modules[key] = {'class': 'Alias'}
             connections.append([key, [f'model:{key}']])
         # modules['estimates'] = {'class': 'Alias'}
@@ -104,7 +101,7 @@ class Waveform(nn.Module):
         
         # Step 2d. There are two outputs from our SeparationModel: estimates and mask.
         # Then put it all together.
-        output = ['estimates']
+        output = ['audio']
         config = {
             'name': cls.__name__,
             'modules': modules,

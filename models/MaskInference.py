@@ -24,12 +24,12 @@ class MaskInference(nn.Module):
         
         #FC layers to calculate mask (or embedding)
         hidden_size = hidden_size * (int(bidirectional) + 1)
-        self.embedding = Embedding(num_features, hidden_size,
-                                   num_sources, activation, num_audio_channels)
+        self.embedding = Embedding(num_features, hidden_size, num_sources, activation, num_audio_channels)
         
     def forward(self, data):
         mix_magnitude = data # save for masking
         
+       
         #Scale spectrograms to dB range (logscale)
         data = self.amplitude_to_db(mix_magnitude)
         
@@ -41,7 +41,12 @@ class MaskInference(nn.Module):
         
         #FC layers to calculate mask (or embedding)
         mask = self.embedding(data)
-        estimates = mix_magnitude.unsqueeze(-1) * mask
+        mix_magnitude = mix_magnitude.unsqueeze(-1)
+        
+        #print(mix_magnitude.shape)
+        #print(mask.shape)
+        
+        estimates = mix_magnitude * mask
         
         output = {
             'mask': mask,

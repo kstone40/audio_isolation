@@ -41,7 +41,8 @@ class UNetSpect(nn.Module):
         
     def forward(self, data):
 
-        mix_magnitude = data.unsqueeze(4)
+        
+        mix_magnitude = data
         
         #Scale spectrograms to dB range (logscale)
         if self.logscale:
@@ -72,7 +73,15 @@ class UNetSpect(nn.Module):
         
         #Final deconvolution to get mask
         mask = self.out(up_conv4)
-        mask = mask.transpose(1, 3).transpose(1, 2).unsqueeze(4)
+        
+        mask = mask.transpose(3, 2).transpose(1, 3).unsqueeze(-2)
+        
+
+        mix_magnitude = mix_magnitude.unsqueeze(-1)
+        
+        #print(mix_magnitude.shape)
+        #print(mask.shape)     
+        
         estimates = mix_magnitude * mask
         
         output = {

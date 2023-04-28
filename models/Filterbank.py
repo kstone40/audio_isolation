@@ -7,8 +7,8 @@ from nussl.ml.networks.modules import AmplitudeToDB, BatchNorm, RecurrentStack, 
 class Filterbank(nn.Module):
     def __init__(self, num_features, num_audio_channels, hidden_size,
                 num_layers, bidirectional, dropout, num_sources, 
-                num_filters, hop_length, window_type='rectangular', # Learned filterbank parameters
-                activation=['sigmoid']): #want to have ['unit_norm'] additionally, if there is more than 1 source
+                num_filters, hop_length, window_type='sqrt_hann', 
+                activation=['sigmoid']):
         super().__init__()
         
         self.representation = LearnedFilterBank(
@@ -23,9 +23,7 @@ class Filterbank(nn.Module):
             num_layers, bool(bidirectional), dropout
         )
         hidden_size = hidden_size * (int(bidirectional) + 1)
-        self.embedding = Embedding(num_features, hidden_size, 
-                                num_sources, activation, 
-                                num_audio_channels)
+        self.embedding = Embedding(num_features, hidden_size, num_sources, activation, num_audio_channels)
         
     def forward(self, data):
         # Take STFT inside model
@@ -43,8 +41,6 @@ class Filterbank(nn.Module):
         estimate_audio = self.representation(estimates, direction='inverse')
         
         output = {
-            #'mask': mask,
-            #'estimates': estimate_audio
             'audio': estimate_audio
         }
         
@@ -54,8 +50,8 @@ class Filterbank(nn.Module):
     @classmethod
     def build(cls,  num_features, num_audio_channels, hidden_size,
                 num_layers, bidirectional, dropout, num_sources, 
-                num_filters, hop_length, window_type='rectangular', # Learned filterbank parameters
-                activation=['sigmoid', 'unit_norm']):
+                num_filters, hop_length, window_type='sqrt_hann', # Learned filterbank parameters
+                activation='sigmoid'):
         
         # Step 1. Register our model with nussl
         nussl.ml.register_module(cls)
@@ -90,7 +86,7 @@ class Filterbank(nn.Module):
         # change the keys to model:mask, model:estimates. The lines below 
         # alias model:mask to just mask, and model:estimates to estimates.
         # This will be important later when we actually deploy our model.
-        for key in ['audio']: #['mask', 'estimates']:
+        for key in ['audio']: 
             modules[key] = {'class': 'Alias'}
             connections.append([key, [f'model:{key}']])
         
