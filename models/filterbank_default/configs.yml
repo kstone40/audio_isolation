@@ -1,18 +1,16 @@
 batch_size: 10
-loss_type: L1
+loss_type: L2
 model_params:
-  activation:
-  - sigmoid
-  - unit_norm
+  activation: sigmoid
   bidirectional: true
-  dropout: 0
+  dropout: 0.3
   hidden_size: 64
   hop_length: 32
   num_audio_channels: 1
   num_features: 128
   num_filters: 128
-  num_layers: 2
-  num_sources: 4
+  num_layers: 3
+  num_sources: 1
   window_type: sqrt_hann
 model_type: Filterbank
 optimizer_params:
@@ -26,7 +24,7 @@ train_generator_params:
   num_mixtures: 1000000
 train_params:
   epoch_length: 10
-  max_epochs: 20
+  max_epochs: 10
 valid_folder: data/musdb18hq/validation
 valid_generator_params:
   coherent_prob: 1.0

@@ -58,7 +58,7 @@ class UNetSpect(nn.Module):
         down_conv2 = self.down_conv2(down_conv1_max)
         down_conv2_max = self.max_pool(down_conv2)
         down_conv3 = self.down_conv3(down_conv2_max)
-        down_conv3_max = self.max_pool(down_conv3)s
+        down_conv3_max = self.max_pool(down_conv3)
         down_conv4 = self.down_conv4(down_conv3_max)
         down_conv4_max = self.max_pool(down_conv4)
         down_conv5 = self.down_conv5(down_conv4_max)

@@ -1,8 +1,8 @@
 model_type: Mask
 loss_type: L1
 stft_params: 
-  window_length: 128
-  hop_length: 32
+  window_length: 512
+  hop_length: 128
   window_type: 'sqrt_hann'
 train_folder: 'data/musdb18hq/train'
 valid_folder: 'data/musdb18hq/validation'
@@ -16,15 +16,15 @@ valid_generator_params:
 batch_size: 10
 model_params:
   num_audio_channels: 1
-  hidden_size: 64
-  num_layers: 2
+  hidden_size: 50
+  num_layers: 3
   bidirectional: True
-  dropout: 0
-  num_sources: 4
-  activation: ['sigmoid','unit_norm']
+  dropout: 0.2
+  num_sources: 1
+  activation: 'sigmoid'
 optimizer_params:
   lr: 0.001
 train_params:
   epoch_length: 10
-  max_epochs: 10
+  max_epochs: 50
 save_name: 'mask_default'

@@ -29,7 +29,6 @@ class MaskInference(nn.Module):
     def forward(self, data):
         mix_magnitude = data # save for masking
         
-       
         #Scale spectrograms to dB range (logscale)
         data = self.amplitude_to_db(mix_magnitude)
         

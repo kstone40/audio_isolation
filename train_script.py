@@ -10,7 +10,6 @@ from models.MaskInference import MaskInference
 from models.UNet import UNetSpect
 from models.Filterbank import Filterbank
 from models.Waveform import Waveform
-from models.WaveUNet import WaveUNet
 from utils import utils, data
 from pathlib import Path
 import yaml, argparse
@@ -34,18 +33,17 @@ model_dict = {'Mask': MaskInference,
               'UNet': UNetSpect,
               'Filterbank':Filterbank,
               'Waveform':Waveform,
-              'WaveUNet':WaveUNet
              }
-waveform_models = ['Filterbank','Waveform','WaveUNet']
+waveform_models = ['Filterbank','Waveform']
 assert model_type in model_dict.keys(), f'Model type must be one of {model_dict.keys()}'
 
 if model_type in waveform_models:
     stft_params = None
     
     tfm = nussl_tfm.Compose([
-        #nussl_tfm.SumSources([['bass', 'drums', 'other']]),
+        nussl_tfm.SumSources([['bass', 'drums', 'other']]),
         nussl_tfm.GetAudio(),
-        #nussl_tfm.IndexSources('source_audio', 1),
+        nussl_tfm.IndexSources('source_audio', 1),
         nussl_tfm.ToSeparationModel(),
     ])
     
@@ -56,9 +54,9 @@ else:
     stft_params = nussl.STFTParams(**configs['stft_params'])
     
     tfm = nussl_tfm.Compose([
-        #nussl_tfm.SumSources([['bass', 'drums', 'other']]),
+        nussl_tfm.SumSources([['bass', 'drums', 'other']]),
         nussl_tfm.MagnitudeSpectrumApproximation(),
-        #nussl_tfm.IndexSources('source_magnitudes', 1),
+        nussl_tfm.IndexSources('source_magnitudes', 1),
         nussl_tfm.ToSeparationModel(),
     ])
     
@@ -85,12 +83,13 @@ def train_step(engine, batch):
     #Forward pass
     output = model(batch)
     loss = loss_fn(output[output_key],batch[target_key])
-    
+     
     #Backward pass
     loss.backward()
     optimizer.step()
-    
-    loss_vals = {'loss':loss.item()}
+     
+    loss_vals = {'L1Loss': loss.item(),
+                 'loss':loss.item()}
     
     return loss_vals
 
@@ -98,7 +97,9 @@ def val_step(engine, batch):
     with torch.no_grad():
         output = model(batch)
     loss = loss_fn(output[output_key],batch[target_key])  
-    loss_vals = {'loss':loss.item()}
+    loss_vals = {'L1Loss': loss.item(),
+                 'loss':loss.item()}
+    
     return loss_vals
 
 
