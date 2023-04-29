@@ -6,6 +6,8 @@ data
 .nfs*
 *.bash
 *.pth
+*.log
+ks*.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

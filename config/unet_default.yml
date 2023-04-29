@@ -1,0 +1,27 @@
+model_type: UNet
+loss_type: L1
+stft_params: 
+  window_length: 2047
+  hop_length: 512
+  window_type: sqrt_hann
+train_folder: 'data/musdb18hq/train'
+valid_folder: 'data/musdb18hq/validation'
+test_folder: 'data/musdb18hq/test'
+train_generator_params:
+  num_mixtures: 1000000
+  coherent_prob: 1.0
+valid_generator_params:
+  num_mixtures: 10
+  coherent_prob: 1.0
+batch_size: 10
+model_params:
+  num_sources: 4
+  num_audio_channels: 1
+  init_features: 16
+  logscale: True
+optimizer_params:
+  lr: 0.001
+train_params:
+  epoch_length: 10
+  max_epochs: 10
+save_name: 'unet_default'

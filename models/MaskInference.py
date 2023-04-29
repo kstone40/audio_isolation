@@ -7,26 +7,40 @@ class MaskInference(nn.Module):
     def __init__(self, num_features, num_audio_channels, hidden_size,
                 num_layers, bidirectional, dropout, num_sources, 
                 activation='sigmoid'):
+        
         super().__init__()
         
+        #Scale spectrograms to dB range (logscale)
         self.amplitude_to_db = AmplitudeToDB()
+        
+        #Batch norm
         self.input_normalization = BatchNorm(num_features)
+        
+        #N layers of BLSTM
         self.recurrent_stack = RecurrentStack(
             num_features * num_audio_channels, hidden_size, 
             num_layers, bool(bidirectional), dropout
         )
+        
+        #FC layers to calculate mask (or embedding)
         hidden_size = hidden_size * (int(bidirectional) + 1)
-        self.embedding = Embedding(num_features, hidden_size, 
-                                num_sources, activation, 
-                                num_audio_channels)
+        self.embedding = Embedding(num_features, hidden_size, num_sources, activation, num_audio_channels)
         
     def forward(self, data):
         mix_magnitude = data # save for masking
         
+        #Scale spectrograms to dB range (logscale)
         data = self.amplitude_to_db(mix_magnitude)
+        
+        #Batch norm
         data = self.input_normalization(data)
+        
+        #N layers of BLSTM
         data = self.recurrent_stack(data)
+        
+        #FC layers to calculate mask (or embedding)
         mask = self.embedding(data)
+        
         estimates = mix_magnitude.unsqueeze(-1) * mask
         
         output = {
@@ -59,7 +73,6 @@ class MaskInference(nn.Module):
                 }
             }
         }
-        
         
         # Step 2b: Define the connections between input and output.
         # Here, the mix_magnitude key is the only input to the model.
