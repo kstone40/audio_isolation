@@ -1,0 +1,30 @@
+model_type: Waveform
+loss_type: L2
+stft_params: null
+train_folder: 'data/musdb18hq/train'
+valid_folder: 'data/musdb18hq/validation'
+test_folder: 'data/musdb18hq/test'
+train_generator_params:
+  num_mixtures: 1000000
+  coherent_prob: 0.85
+valid_generator_params:
+  num_mixtures: 10
+  coherent_prob: 1.0
+batch_size: 10
+model_params:
+  num_audio_channels: 1
+  hidden_size: 64
+  num_layers: 2
+  bidirectional: True
+  dropout: 0.3
+  num_sources: 1
+  activation: 'sigmoid'
+  window_type: 'sqrt_hann'
+  num_filters: 512
+  hop_length: 128
+optimizer_params:
+  lr: 0.001
+train_params:
+  epoch_length: 25
+  max_epochs: 25
+save_name: 'waveform_1source'
