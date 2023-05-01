@@ -13,68 +13,12 @@ import warnings
 from typing import Union, List
 import logging
 import os
-from . import argbind
-from . import utils
 from torchaudio.datasets import MUSDB_HQ
 import torchaudio
 
 MAX_SOURCE_TIME = 10000
 LABELS = ['bass', 'drums', 'other', 'vocals']
 
-def download():
-    """Downloads required files for tutorial.
-    """
-    AUDIO_FILES = [
-        'schoolboy_fascination_excerpt.wav',
-        'historyrepeating_7olLrex.wav',
-        'wsj_speech_mixture_ViCfBJj.mp3',
-        'zeno_sign_mix_LerFJoZ.wav',
-        'zeno_sign_vocals-openunmix.wav',
-        'zeno_sign_vocals-convtasnet.wav',
-        'zeno_sign_vocals-reference.wav'
-    ]
-    MODEL_FILES = [
-        
-    ]
-
-    for x in AUDIO_FILES:
-        nussl.efz_utils.download_audio_file(x)
-    for x in MODEL_FILES:
-        nussl.efz_utils.download_trained_model(x)
-
-@argbind.bind_to_parser()
-def signal(
-    window_length : int = 2048,
-    hop_length : int = 512,
-    window_type : str = 'sqrt_hann',
-    sample_rate: int = 44100
-):
-    """
-    Defines global AudioSignal parameters and
-    builds STFTParams object.
-
-    Parameters
-    ----------
-    window_length : int, optional
-        Window length of STFT, by default 2048.
-    hop_length : int, optional
-        Hop length of STFT, by default 512.
-    window_type : str, optional
-        Window type of STFT., by default 'sqrt_hann'.
-    sample_rate : int, optional
-        Sampling rate, by default 44100.
-
-    Returns
-    -------
-    tuple
-        Tuple of nussl.STFTParams and sample_rate.
-    """
-    return (
-        nussl.STFTParams(window_length, hop_length, window_type), 
-        sample_rate
-    )
-
-@argbind.bind_to_parser('train', 'val')
 def transform(
     stft_params : nussl.STFTParams, 
     sample_rate : int,
@@ -131,23 +75,6 @@ def transform(
         
     return nussl_tfm.Compose(tfm), new_labels
 
-@argbind.bind_to_parser()
-def symlink(
-    folder : str = '~/.nussl/tutorial',
-    target : str = 'data/'
-):
-    folder = Path(folder).expanduser().absolute()
-    target = Path(target).expanduser().absolute()
-    target.parent.mkdir(parents=True, exist_ok=True)
-
-    logging.info(f'Symlinking {folder} to {target}')
-    folder.mkdir(exist_ok=True)
-    try:
-        os.symlink(folder, target)
-    except:
-        logging.warning("Symlink already exists!")
-
-@argbind.bind_to_parser()
 def prepare_musdb(
     folder : str = 'data/MUSDB18_7s/', 
     musdb_root : str = None, 
@@ -192,7 +119,6 @@ def prepare_musdb(
                 src_path = str(src_path / song_name) + '.wav'
                 val.write_audio_to_file(src_path)
                 
-@argbind.bind_to_parser()
 def prepare_musdbhq(
     folder : str = 'data/musdb18hq/', 
     musdb_root : str = None, 
@@ -239,27 +165,8 @@ def prepare_musdbhq(
                 src_path.mkdir(exist_ok=True)
                 src_path = str(src_path / song_name) + '.wav'
                 wave = item[0][i, :, :]
-                #wave = wave.cpu().detach().numpy()
-                #wave.write_audio_to_file(src_path)
                 torchaudio.save(src_path, wave, item[1])
 
-@argbind.bind_to_parser()
-def profile(
-    num_workers : int = 0,
-    batch_size : int = 1,
-):
-    stft_params, sample_rate = signal()
-    train_tfm = transform(stft_params, sample_rate)
-    train_data = mixer(stft_params, train_tfm)
-    train_sampler = torch.utils.data.sampler.RandomSampler(train_data)
-    train_dataloader = torch.utils.data.DataLoader(train_data, 
-        num_workers=num_workers, batch_size=batch_size, 
-        sampler=train_sampler)
-    for _ in tqdm.tqdm(train_dataloader):
-        pass
-    
-
-@argbind.bind_to_parser('train', 'val', 'test')
 def mixer(
     stft_params,
     transform,
@@ -495,23 +402,3 @@ class MUSDBMixer():
             }
         }
         return output
-
-@argbind.bind_to_parser()
-def run(
-    args,
-    output_folder : str = '.',
-    stages : List[str] = ['download', 'symlink', 'prepare_musdb']
-):
-    output_folder = Path(output_folder)
-    output_folder.mkdir(exist_ok=True, parents=True)
-    with utils.chdir(output_folder):
-        for stage in stages:
-            fn = globals()[stage]
-            fn()
-
-    
-if __name__ == "__main__":
-    utils.logger()
-    args = argbind.parse_args()
-    with argbind.scope(args):
-        run(args)
