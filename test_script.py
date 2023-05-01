@@ -15,23 +15,17 @@ warnings.simplefilter("ignore")
 from models.MaskInference import MaskInference
 from models.UNet import UNetSpect
 from models.Filterbank import Filterbank
+from models.Waveform import Waveform
+
 nussl.ml.register_module(MaskInference)
 nussl.ml.register_module(UNetSpect)
 nussl.ml.register_module(Filterbank)
+nussl.ml.register_module(Waveform)
 
-eval_list = ['ST_mask_tutorial_defaults',
-             'ST_mask_1layer','ST_mask_3layer','ST_mask_5layer',
-             'ST_mask_0.1dropout','ST_mask_0.5dropout','ST_mask_0.7dropout',
-             'ST_mask_1e-2LR','ST_mask_1e-4LR',
-             'ST_mask_3L_0.5P',
-             'ST_mask_25h','ST_mask_100h',
-             'ST_mask_64hop','ST_mask_256hop',
-             'ST_mask_128w','ST_mask_2048w',
-             'ST_unet_16f_v2','ST_unet_8f',
-             'filterbank',
-             'filterbank_1e-3LR','filterbank_5e-3LR',
-             'filterbank_3L_0.5P',
-             'filterbank_3L_0.5P_16f','filterbank_3L_0.5P_32f',
+eval_list = ['mask_1source','mask_4source',
+             'waveform_1source','waveform_4source',
+             'filterbank_1source','filterbank_4source',
+             'unet_1source','unet_4source'
             ]
 
 test_iterations = 50 #number of samples
@@ -54,7 +48,7 @@ for model_name in eval_list:
         f.close()
 
     model_type = configs['model_type']
-    waveform_models = ['Filterbank']
+    waveform_models = ['Filterbank','Waveform']
     if model_type in waveform_models:
         stft_params = None
 
@@ -125,9 +119,7 @@ for model_name in eval_list:
     
     #Test on the data
     test_folder = configs['test_folder']
-    tfm = nussl_tfm.Compose([
-        nussl_tfm.SumSources([['bass', 'drums', 'other']]),
-    ])
+    tfm = None
     test_data = data.mixer(stft_params, transform=tfm, fg_path=configs['test_folder'], num_mixtures=test_iterations, coherent_prob=1.0, duration=test_duration)
     
     #Set up a master dictionary to combine the scores from each test data (per model)
@@ -139,19 +131,23 @@ for model_name in eval_list:
     #Individually score each sample in the test data
     for i,item in enumerate(test_data):
         separator.audio_signal = item['mix']
-        estimates = separator()
+        output = separator()
 
         source_keys = list(item['sources'].keys())
-        estimates = {
-            'vocals': estimates[0],
-            'bass+drums+other': item['mix'] - estimates[0]
-        }
 
-        sources = [item['sources'][k] for k in source_keys]
-        estimates = [estimates[k] for k in source_keys]
-
+        if len(output)>1:
+            order = ['bass','drums','other','vocals']
+        else:
+            order = ['vocals']
+            
+        estimates = []
+        sources = []
+        #print(item['sources'].keys())
+        for j,source in enumerate(order[0:len(source_keys)+1]):
+            estimates.append(output[j])
+            sources.append(item['sources'][source])
         evaluator = nussl.evaluation.BSSEvalScale(
-            sources, estimates, source_labels=source_keys
+            sources, estimates, source_labels=order
         )
         try:
             scores = evaluator.evaluate()
@@ -159,7 +155,7 @@ for model_name in eval_list:
             print(f'Evaluation error with model {model_name} and sample {i}')
             continue
             
-        for source in source_keys:
+        for source in order:
             for score in scores[source]:
                 if score not in all_scores[source].keys():
                     all_scores[source][score] = scores[source][score]
@@ -167,7 +163,7 @@ for model_name in eval_list:
                     all_scores[source][score] += scores[source][score]
     
     #Record all metadata, and combine the scores with a mean (per model)
-    for source in source_keys:
+    for source in order:
         row = {'Source':source, 'Model':configs['model_type'], 'Loss Type':configs['loss_type'], 'Final Loss':model_checkpoint['metadata']['trainer.state_dict']['output']['loss']}
         if 'stft_params' in configs.keys():
             if configs['stft_params'] is not None:
