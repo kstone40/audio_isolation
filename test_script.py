@@ -23,9 +23,9 @@ nussl.ml.register_module(Filterbank)
 nussl.ml.register_module(Waveform)
 
 eval_list = ['mask_1source','mask_4source',
-             # 'waveform_1source','waveform_4source',
-             # 'filterbank_1source','filterbank_4source',
-             # 'unet_1source','unet_4source'
+             'waveform_1source','waveform_4source',
+             'filterbank_1source','filterbank_4source',
+             'unet_1source','unet_4source'
             ]
 
 test_iterations = 50 #number of samples
